@@ -1,65 +1,323 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>青年领学说</title>
+<title>联大应科 - 青年领学说</title>
 <style>
   body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    background: #f4f6f8;
     display: flex;
+    flex-direction: column;
     height: 100vh;
   }
-  #sidebar {
-    width: 200px;
-    border-right: 1px solid #ccc;
-    overflow-y: auto;
-    padding: 10px;
-    box-sizing: border-box;
+  header {
+    background: #1976d2;
+    color: #fff;
+    padding: 15px 20px;
+    font-size: 1.8em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   }
-  #sidebar img {
-    width: 100%;
-    cursor: pointer;
-    margin-bottom: 10px;
+  header input {
+    padding: 6px 10px;
     border-radius: 4px;
+    border: none;
+    width: 250px;
+    font-size: 1em;
+  }
+  #container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+  #sidebar {
+    width: 300px;
+    background: #fff;
+    padding: 15px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    border-right: 1px solid #ddd;
+  }
+  .video-item {
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    background: #fafafa;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .video-item:hover {
+    background: #e3f2fd;
+    transform: translateX(2px);
+  }
+  .video-item.active {
+    background: #bbdefb;
+    font-weight: bold;
+    border-left: 4px solid #1976d2;
   }
   #main {
     flex: 1;
-    padding: 10px;
+    padding: 25px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
   }
   #video-info {
-    margin-bottom: 10px;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 800px;
+    text-align: left;
+  }
+  #video-info h3 {
+    margin: 0 0 6px 0;
+    font-size: 1.4em;
+  }
+  #video-info p {
+    margin: 3px 0;
+    color: #555;
+    font-size: 1em;
   }
   video {
-    flex: 1;
     width: 100%;
-    border-radius: 4px;
+    max-width: 800px;
+    border-radius: 10px;
     background: #000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
 </style>
 </head>
 <body>
 
-<div id="sidebar"></div>
+<header>
+  <div>联大应科 - 青年领学说</div>
+  <input type="text" id="search" placeholder="搜索您想观看的领学人...">
+</header>
 
-<div id="main">
-  <div id="video-info">
-    <h3 id="episode">期数: </h3>
-    <p id="author">作者: </p>
-    <p id="date">日期: </p>
+<div id="container">
+  <div id="sidebar">
+    <div id="video-list"></div>
   </div>
-  <video id="video-player" controls></video>
+
+  <div id="main">
+    <div id="video-info">
+      <h3 id="episode">期数: </h3>
+      <p id="author">作者: </p>
+      <p id="date">发布日期: </p>
+    </div>
+    <video id="video-player" controls></video>
+  </div>
 </div>
 
 <script>
-const sidebar = document.getElementById('sidebar');
+const videoListEl = document.getElementById('video-list');
 const videoPlayer = document.getElementById('video-player');
 const episodeEl = document.getElementById('episode');
 const authorEl = document.getElementById('author');
 const dateEl = document.getElementById('date');
+const searchInput = document.getElementById('search');
+
+let allVideos = [];
+let activeVideo = null;
+
+// 替换成你的 JSON 地址
+const jsonUrl = 'https://example.com/videos.json';
+
+fetch(jsonUrl)
+  .then(res => res.json())
+  .then(data => {
+    allVideos = data.videos;
+    renderVideoList(allVideos);
+    if(allVideos.length > 0) loadVideo(allVideos[0]);
+  })
+  .catch(err => console.error('无法加载视频数据:', err));
+
+function renderVideoList(videos) {
+  videoListEl.innerHTML = '';
+  if(videos.length === 0) {
+    videoListEl.innerHTML = '<p style="color:#999;">未找到相关视频</p>';
+    return;
+  }
+  videos.forEach((video) => {
+    const div = document.createElement('div');
+    div.className = 'video-item';
+    div.innerHTML = `
+      <div>期数: ${video.episode}</div>
+      <div>作者: ${video.author}</div>
+      <div>发布日期: ${video.date}</div>
+    `;
+    div.addEventListener('click', () => loadVideo(video));
+    videoListEl.appendChild(div);
+  });
+  highlightActive();
+}
+
+function loadVideo(video) {
+  activeVideo = video;
+  videoPlayer.src = video.video_url;
+  episodeEl.textContent = `期数: ${video.episode}`;
+  authorEl.textContent = `作者: ${video.author}`;
+  dateEl.textContent = `发布日期: ${video.date}`;
+  highlightActive();
+}
+
+function highlightActive() {
+  const items = document.querySelectorAll('.video-item');
+  items.forEach(item => {
+    const text = item.textContent;
+    if(activeVideo && text.includes(`期数: ${activeVideo.episode}`)) {
+      item.classList.add('active');
+    } else {
+      item.classList.remove('active');
+    }
+  });
+}
+
+// 搜索功能
+searchInput.addEventListener('input', () => {
+  const keyword = searchInput.value.trim().toLowerCase();
+  const filtered = allVideos.filter(v => v.author.toLowerCase().includes(keyword));
+  renderVideoList(filtered);
+});
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>联大应科 - 青年领学说</title>
+<style>
+  body {
+    margin: 0;
+    font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    background: #f4f6f8;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    background: #1976d2;
+    color: #fff;
+    padding: 15px 20px;
+    font-size: 1.8em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  header input {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: none;
+    width: 250px;
+    font-size: 1em;
+  }
+  #container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+  #sidebar {
+    width: 300px;
+    background: #fff;
+    padding: 15px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    border-right: 1px solid #ddd;
+  }
+  .video-item {
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    background: #fafafa;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .video-item:hover {
+    background: #e3f2fd;
+    transform: translateX(2px);
+  }
+  .video-item.active {
+    background: #bbdefb;
+    font-weight: bold;
+    border-left: 4px solid #1976d2;
+  }
+  #main {
+    flex: 1;
+    padding: 25px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+  }
+  #video-info {
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 800px;
+    text-align: left;
+  }
+  #video-info h3 {
+    margin: 0 0 6px 0;
+    font-size: 1.4em;
+  }
+  #video-info p {
+    margin: 3px 0;
+    color: #555;
+    font-size: 1em;
+  }
+  video {
+    width: 100%;
+    max-width: 800px;
+    border-radius: 10px;
+    background: #000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>联大应科 - 青年领学说</div>
+  <input type="text" id="search" placeholder="搜索您想观看的领学人...">
+</header>
+
+<div id="container">
+  <div id="sidebar">
+    <div id="video-list"></div>
+  </div>
+
+  <div id="main">
+    <div id="video-info">
+      <h3 id="episode">期数: </h3>
+      <p id="author">作者: </p>
+      <p id="date">发布日期: </p>
+    </div>
+    <video id="video-player" controls></video>
+  </div>
+</div>
+
+<script>
+const videoListEl = document.getElementById('video-list');
+const videoPlayer = document.getElementById('video-player');
+const episodeEl = document.getElementById('episode');
+const authorEl = document.getElementById('author');
+const dateEl = document.getElementById('date');
+const searchInput = document.getElementById('search');
+
+let allVideos = [];
+let activeVideo = null;
 
 // 替换成你的 JSON 地址
 const jsonUrl = 'https://yts99.github.io/YLLT-CAST/res.json';
@@ -67,25 +325,59 @@ const jsonUrl = 'https://yts99.github.io/YLLT-CAST/res.json';
 fetch(jsonUrl)
   .then(res => res.json())
   .then(data => {
-    data.videos.forEach((video, index) => {
-      const img = document.createElement('img');
-      img.src = video.thumbnail_url;
-      img.title = `Episode ${video.episode}`;
-      img.addEventListener('click', () => loadVideo(video));
-      sidebar.appendChild(img);
-
-      // 默认加载第一个视频
-      if(index === 0) loadVideo(video);
-    });
+    allVideos = data.videos;
+    renderVideoList(allVideos);
+    if(allVideos.length > 0) loadVideo(allVideos[0]);
   })
-  .catch(err => console.error('Failed to load videos:', err));
+  .catch(err => console.error('无法加载视频数据:', err));
+
+function renderVideoList(videos) {
+  videoListEl.innerHTML = '';
+  if(videos.length === 0) {
+    videoListEl.innerHTML = '<p style="color:#999;">未找到相关视频</p>';
+    return;
+  }
+  videos.forEach((video) => {
+    const div = document.createElement('div');
+    div.className = 'video-item';
+    div.innerHTML = `
+      <div>期数: ${video.episode}</div>
+      <div>作者: ${video.author}</div>
+      <div>发布日期: ${video.date}</div>
+    `;
+    div.addEventListener('click', () => loadVideo(video));
+    videoListEl.appendChild(div);
+  });
+  highlightActive();
+}
 
 function loadVideo(video) {
+  activeVideo = video;
   videoPlayer.src = video.video_url;
-  episodeEl.textContent = `Episode: ${video.episode}`;
-  authorEl.textContent = `Author: ${video.author}`;
-  dateEl.textContent = `Date: ${video.date}`;
+  episodeEl.textContent = `期数: ${video.episode}`;
+  authorEl.textContent = `作者: ${video.author}`;
+  dateEl.textContent = `发布日期: ${video.date}`;
+  highlightActive();
 }
+
+function highlightActive() {
+  const items = document.querySelectorAll('.video-item');
+  items.forEach(item => {
+    const text = item.textContent;
+    if(activeVideo && text.includes(`期数: ${activeVideo.episode}`)) {
+      item.classList.add('active');
+    } else {
+      item.classList.remove('active');
+    }
+  });
+}
+
+// 搜索功能
+searchInput.addEventListener('input', () => {
+  const keyword = searchInput.value.trim().toLowerCase();
+  const filtered = allVideos.filter(v => v.author.toLowerCase().includes(keyword));
+  renderVideoList(filtered);
+});
 </script>
 
 </body>
