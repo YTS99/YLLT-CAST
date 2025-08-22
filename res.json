@@ -1,0 +1,18 @@
+{
+  "videos": [
+    {
+      "episode": "001",
+      "author": "John Doe",
+      "date": "2025-08-22",
+      "thumbnail_url": "https://example.com/thumbnails/001.jpg",
+      "video_url": "https://example.com/videos/001.mp4"
+    },
+    {
+      "episode": "002",
+      "author": "Jane Smith",
+      "date": "2025-08-23",
+      "thumbnail_url": "https://example.com/thumbnails/002.jpg",
+      "video_url": "https://example.com/videos/002.mp4"
+    }
+  ]
+}
